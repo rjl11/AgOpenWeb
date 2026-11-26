@@ -690,6 +690,9 @@ public class UdpCommunicationService : IUdpCommunicationService, IDisposable
                 _imuStream.Record();
                 break;
 
+            case PgnNumbers.HITCH_ANGLE: // 218 - hitch angle sensor; AutoSteerService reads it
+                break;
+
             case PgnNumbers.ISOBUS_HEARTBEAT: // 240 - task controller; IsobusTaskControllerService reads it
                 if (data.Length > 2 && data[2] == Isobus.IsobusTaskControllerService.TaskControllerSource)
                 {

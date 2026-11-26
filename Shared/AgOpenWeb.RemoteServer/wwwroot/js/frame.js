@@ -120,6 +120,7 @@ function skFrame(ts) {
     updatePassHud();
     updateHeadlandHud();
     updateContourAheadHud();
+    updateHitchAngleReadout();
     renderStatusBar();
     renderSimBar();
     renderSectionBar();

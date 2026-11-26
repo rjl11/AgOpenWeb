@@ -113,6 +113,9 @@ public class ToolProfileService : IToolProfileService
         store.Tool.TrailingHitchLength = 2.5;
         store.Tool.TankTrailingHitchLength = 3.0;
         store.Tool.TrailingToolToPivotLength = 0.0;
+        store.Tool.UseHitchAngleSensor = false;
+        store.Tool.HitchAngleOffset = 0.0;
+        store.Tool.HitchAngleInvert = false;
         store.Tool.IsToolTrailing = false;
         store.Tool.IsToolTBT = false;
         store.Tool.IsToolRearFixed = true;

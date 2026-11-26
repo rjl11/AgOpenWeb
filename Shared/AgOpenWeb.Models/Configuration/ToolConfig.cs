@@ -101,6 +101,33 @@ public class ToolConfig : ObservableObject
         set => SetProperty(ref _trailingToolToPivotLength, value);
     }
 
+    private bool _useHitchAngleSensor;
+    /// <summary>Trailing: place the implement at the angle a hitch angle sensor measures (PGN 218)
+    /// instead of estimating it from the tractor's track. The estimate is used while no fresh
+    /// valid reading arrives. Not used for TBT.</summary>
+    public bool UseHitchAngleSensor
+    {
+        get => _useHitchAngleSensor;
+        set => SetProperty(ref _useHitchAngleSensor, value);
+    }
+
+    private double _hitchAngleOffset;
+    /// <summary>Degrees subtracted from the sensor's reading (after <see cref="HitchAngleInvert"/>):
+    /// what it reads with the implement straight behind.</summary>
+    public double HitchAngleOffset
+    {
+        get => _hitchAngleOffset;
+        set => SetProperty(ref _hitchAngleOffset, value);
+    }
+
+    private bool _hitchAngleInvert;
+    /// <summary>The sensor is mounted the other way round: its sign is flipped.</summary>
+    public bool HitchAngleInvert
+    {
+        get => _hitchAngleInvert;
+        set => SetProperty(ref _hitchAngleInvert, value);
+    }
+
     // ISO 11783 hitch/coupling type code (-1 = not available, 0 = unknown/default,
     // 1..10 = specific ISO coupling standards). Stored as the ISO integer; the UI
     // shows the text description. Informational metadata for now (export/PGN).

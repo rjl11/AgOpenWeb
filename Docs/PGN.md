@@ -1245,6 +1245,30 @@ The antenna position is set in Vehicle Configuration → Vehicle, the IMU positi
 <br>
 <br>
 
+## Hitch angle sensor
+
+AgOpenWeb's own PGN, not in AgOpenGPS: a sensor at the hitch (a potentiometer or an encoder on the
+drawbar pin) sends the measured angle between the tractor and a trailed implement, to port 8888 like
+the other module PGNs, at 10 Hz or faster. With *Hitch angle sensor* on in the tool settings and a
+trailing tool, AgOpenWeb places the implement at the measured angle instead of estimating it from
+the tractor's track. A reading older than 300 ms, or one flagged not valid, is ignored and the
+estimate takes over. Not used for TBT (tank and tool: two joints).
+
+| PGN Name | Src | PGN | Dec | Len | Byte 5-6 | Byte 7 | Byte 8-12 | Byte 13 |
+|---|---|---|---|---|---|---|---|---|
+| Hitch angle | any | DA | 218 | 8 | Angle, degrees × 100, int16 little-endian | 1 = valid, 0 = no reading | reserved, 0 | CRC |
+
+The angle is positive with the implement to the right of the tractor's line, seen from the
+seat looking forward (it cuts inside a right turn: the tractor turning right), negative to the
+left, and 0 with it straight behind.
+*Invert* and *Zero offset* in the settings correct a sensor mounted the other way or not quite
+straight. The packet is 14 bytes: `80 81 src DA 08 lo hi valid 00 00 00 00 00 crc`, the CRC
+the sum of bytes 2-12 as for every PGN.
+
+
+<br>
+<br>
+
 ## Subnet Reply to AgIO
 
 <table>

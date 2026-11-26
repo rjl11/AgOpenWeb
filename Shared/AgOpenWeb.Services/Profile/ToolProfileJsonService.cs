@@ -133,6 +133,9 @@ public static class ToolProfileJsonService
                 TrailingHitchLength = store.Tool.TrailingHitchLength,
                 TankTrailingHitchLength = store.Tool.TankTrailingHitchLength,
                 TrailingToolToPivotLength = store.Tool.TrailingToolToPivotLength,
+                UseHitchAngleSensor = store.Tool.UseHitchAngleSensor,
+                HitchAngleOffset = store.Tool.HitchAngleOffset,
+                HitchAngleInvert = store.Tool.HitchAngleInvert,
                 HitchType = store.Tool.HitchType,
                 IsToolTrailing = store.Tool.IsToolTrailing,
                 IsToolTBT = store.Tool.IsToolTBT,
@@ -212,6 +215,9 @@ public static class ToolProfileJsonService
         store.Tool.TrailingHitchLength = Math.Abs(dto.Tool?.TrailingHitchLength ?? 2.5);
         store.Tool.TankTrailingHitchLength = dto.Tool?.TankTrailingHitchLength ?? 3.0;
         store.Tool.TrailingToolToPivotLength = dto.Tool?.TrailingToolToPivotLength ?? 0.0;
+        store.Tool.UseHitchAngleSensor = dto.Tool?.UseHitchAngleSensor ?? false;
+        store.Tool.HitchAngleOffset = dto.Tool?.HitchAngleOffset ?? 0.0;
+        store.Tool.HitchAngleInvert = dto.Tool?.HitchAngleInvert ?? false;
         store.Tool.HitchType = dto.Tool?.HitchType ?? 0;
         store.Tool.IsToolTrailing = dto.Tool?.IsToolTrailing ?? false;
         store.Tool.IsToolTBT = dto.Tool?.IsToolTBT ?? false;
@@ -348,6 +354,9 @@ public static class ToolProfileJsonService
         public double TrailingHitchLength { get; set; }
         public double TankTrailingHitchLength { get; set; }
         public double TrailingToolToPivotLength { get; set; }
+        public bool? UseHitchAngleSensor { get; set; }
+        public double? HitchAngleOffset { get; set; }
+        public bool? HitchAngleInvert { get; set; }
         public int HitchType { get; set; }
         public bool IsToolTrailing { get; set; }
         public bool IsToolTBT { get; set; }

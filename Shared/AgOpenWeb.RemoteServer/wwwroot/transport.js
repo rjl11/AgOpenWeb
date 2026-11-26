@@ -177,6 +177,10 @@ window.RemoteTransport = {
           op.outOfBounds = !!u8(); // #494 — pivot outside the field: red boundary, orange frame
           op.contourAhead = u8();    // contour: 0 clear, 1 the line turns back, 2 runs over sprayed ground, 3 ends
           op.contourAheadM = f32();  // ... that far ahead along the line (m): take over
+          op.hitchAngle = f32();     // tractor to implement (deg, +right of the tractor's line)
+          op.hitchAngleMeasured = !!u8(); // ... placed by a hitch angle sensor (PGN 218)
+          op.hitchSensorRaw = f32(); // the sensor's reading as it came (deg)
+          op.hitchSensorState = u8(); // 0 never heard, 1 fresh and valid, 2 stale or not valid
           handlers.onTick && handlers.onTick({
             sceneVersion, pose, fix, sections, crossTrackError, guidanceActive, lineLabel,
             activeTrackName: atn.length ? atn : null, tool, op, roll, tools,
@@ -407,6 +411,7 @@ window.RemoteTransport = {
             slowSpeedCutoff: f64(), coverageMargin: f64(),
             isWorkSwitchEnabled: !!u8(), isWorkSwitchActiveLow: !!u8(), isWorkSwitchManualSections: !!u8(),
             isSteerSwitchEnabled: !!u8(), isSteerSwitchManualSections: !!u8(), totalWidth: f64(),
+            useHitchAngleSensor: !!u8(), hitchAngleOffset: f64(), hitchAngleInvert: !!u8(),
           };
           const uturn = { style: i32(), extension: f64(), smoothing: i32(), radius: f64(), distanceFromBoundary: f64() };
           const tram = { passes: i32(), display: !!u8(), line: i32(), width: f64(), outerInverted: !!u8() };

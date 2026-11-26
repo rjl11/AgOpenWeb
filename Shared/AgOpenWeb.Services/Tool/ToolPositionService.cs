@@ -23,7 +23,9 @@ internal readonly record struct ToolPositionSnapshot(
     Vec3 TankPosition,
     Vec3 HitchPosition,
     bool IsToolPositionReady,
-    bool HasPosition);
+    bool HasPosition,
+    double HitchAngle,
+    bool IsHitchAngleMeasured);
 
 /// <summary>
 /// Calculates tool/implement position relative to vehicle pivot point.
@@ -67,6 +69,36 @@ public class ToolPositionService : IToolPositionService
 
 
     private static double AngleBetween(double a, double b) => Math.Abs(Math.PI - Math.Abs(Math.Abs(a - b) - Math.PI));
+
+    /// <summary>A hitch angle sensor's reading (PGN 218) older than this is not used.</summary>
+    internal const long HitchSensorFreshMs = 300;
+
+    // The hitch angle sensor's last reading (PGN 218), as it came: degrees, before invert/offset.
+    // Written by the UDP receive thread, read by the control loop and the UI without a lock: a
+    // torn read at worst pairs one reading with the next one's time, 10 ms apart.
+    private double _sensorAngleDeg;
+    private long _sensorAtMs = long.MinValue;
+    private bool _sensorValid;
+
+    // The vehicle heading of the last update, and whether it placed the tool from the sensor.
+    private double _vehicleHeading;
+    private bool _hitchAngleMeasured;
+
+    /// <summary>Milliseconds clock for the sensor's freshness; tests replace it.</summary>
+    internal Func<long> TickClock { get; set; } = () => Environment.TickCount64;
+
+    /// <summary>
+    /// The hitch angle from tractor to implement, radians, from the tractor's and the tool's
+    /// headings: positive with the implement to the right of the tractor's line (seen from the
+    /// seat), as PGN 218 counts it. A tool heading points from the tool to what pulls it.
+    /// </summary>
+    internal static double HitchAngleFrom(double vehicleHeading, double toolHeading)
+    {
+        double a = vehicleHeading - toolHeading;
+        while (a > Math.PI) a -= 2 * Math.PI;
+        while (a < -Math.PI) a += 2 * Math.PI;
+        return a;
+    }
 
     // The published state, behind a seqlock: the writer (under _writeLock) makes _version odd,
     // writes, makes it even again; a reader copies the value and retries if the version was odd
@@ -122,6 +154,44 @@ public class ToolPositionService : IToolPositionService
     /// </summary>
     public bool HasPosition => Read().HasPosition;
 
+    public double HitchAngle => Read().HitchAngle;
+    public bool IsHitchAngleMeasured => Read().IsHitchAngleMeasured;
+
+    public void SetMeasuredHitchAngle(double degrees, bool valid)
+    {
+        Volatile.Write(ref _sensorAngleDeg, degrees);
+        Volatile.Write(ref _sensorValid, valid);
+        Volatile.Write(ref _sensorAtMs, TickClock());
+    }
+
+    public HitchAngleReading? LastHitchSensorReading
+    {
+        get
+        {
+            long at = Volatile.Read(ref _sensorAtMs);
+            if (at == long.MinValue) return null;
+            return new HitchAngleReading(Volatile.Read(ref _sensorAngleDeg), Volatile.Read(ref _sensorValid),
+                TickClock() - at < HitchSensorFreshMs);
+        }
+    }
+
+    /// <summary>
+    /// The sensor's angle to use now, radians, with the tool's invert and zero offset applied:
+    /// null when the sensor is off in the settings, never heard, not valid or older than
+    /// <see cref="HitchSensorFreshMs"/>.
+    /// </summary>
+    private double? MeasuredHitchAngle(ToolConfig tool)
+    {
+        if (!tool.UseHitchAngleSensor) return null;
+        long at = Volatile.Read(ref _sensorAtMs);
+        if (at == long.MinValue || TickClock() - at >= HitchSensorFreshMs || !Volatile.Read(ref _sensorValid))
+            return null;
+        double deg = Volatile.Read(ref _sensorAngleDeg);
+        if (tool.HitchAngleInvert) deg = -deg;
+        deg -= tool.HitchAngleOffset;
+        return deg * Math.PI / 180.0;
+    }
+
     /// <summary>Caller holds _writeLock (the one writer at a time the seqlock needs).</summary>
     private void PublishSnapshot()
     {
@@ -130,7 +200,9 @@ public class ToolPositionService : IToolPositionService
             _toolPosition, _toolPivotPosition, _toolHeading,
             _tankPosition, _hitchPosition,
             _startCounter >= STARTUP_FRAMES,
-            HasPosition: true);
+            HasPosition: true,
+            HitchAngle: HitchAngleFrom(_vehicleHeading, _toolHeading),
+            IsHitchAngleMeasured: _hitchAngleMeasured);
         Interlocked.Increment(ref _version);   // even: done
     }
 
@@ -140,6 +212,8 @@ public class ToolPositionService : IToolPositionService
         {
             var tool = _configStore.Tool;
             var vehicle = _configStore.Vehicle;
+            _vehicleHeading = vehicleHeading;
+            _hitchAngleMeasured = false;
 
             // The point the tool hangs on (RigGeometry): a fixed tool's working point, or the
             // tractor's hitch pin for a trailed one.
@@ -204,23 +278,33 @@ public class ToolPositionService : IToolPositionService
         }
         _lastHitchPos = _hitchPosition;
 
-        // Torriem's algorithm: calculate heading from movement
-        // Tool heading = direction from current position toward hitch
-        double dx = _hitchPosition.Easting - _lastToolPivotPos.Easting;
-        double dy = _hitchPosition.Northing - _lastToolPivotPos.Northing;
-
-        // Only update heading if we've moved enough
-        if (Math.Abs(dx) > 0.001 || Math.Abs(dy) > 0.001)
+        if (MeasuredHitchAngle(tool) is double measured)
         {
-            _toolHeading = Math.Atan2(dx, dy);
-            if (_toolHeading < 0) _toolHeading += 2 * Math.PI; // Normalize to [0, 2pi]
+            // A hitch angle sensor (PGN 218): the implement is where it says, jackknifed or not.
+            _toolHeading = (vehicleHeading - measured) % (2 * Math.PI);
+            if (_toolHeading < 0) _toolHeading += 2 * Math.PI;
+            _hitchAngleMeasured = true;
         }
-
-        // Jackknifed: spring it back behind the hitch (AgOpenGPS, against the hitch's heading)
-        if (AngleBetween(_toolHeading, vehicleHeading) > TOOL_JACKKNIFE)
+        else
         {
-            SnapToolBehindVehicle(vehicleHeading, tool);
-            return;
+            // Torriem's algorithm: calculate heading from movement
+            // Tool heading = direction from current position toward hitch
+            double dx = _hitchPosition.Easting - _lastToolPivotPos.Easting;
+            double dy = _hitchPosition.Northing - _lastToolPivotPos.Northing;
+
+            // Only update heading if we've moved enough
+            if (Math.Abs(dx) > 0.001 || Math.Abs(dy) > 0.001)
+            {
+                _toolHeading = Math.Atan2(dx, dy);
+                if (_toolHeading < 0) _toolHeading += 2 * Math.PI; // Normalize to [0, 2pi]
+            }
+
+            // Jackknifed: spring it back behind the hitch (AgOpenGPS, against the hitch's heading)
+            if (AngleBetween(_toolHeading, vehicleHeading) > TOOL_JACKKNIFE)
+            {
+                SnapToolBehindVehicle(vehicleHeading, tool);
+                return;
+            }
         }
 
         // Calculate tool pivot position - trails behind hitch
@@ -437,6 +521,8 @@ public class ToolPositionService : IToolPositionService
 
             var tool = _configStore.Tool;
             var vehicle = _configStore.Vehicle;
+            _vehicleHeading = vehicleHeading;
+            _hitchAngleMeasured = false;
 
             _hitchPosition = RigGeometry.AlongTractor(vehiclePivot, vehicleHeading, RigGeometry.AttachX(vehicle, tool));
 

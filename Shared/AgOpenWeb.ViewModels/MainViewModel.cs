@@ -488,6 +488,8 @@ public partial class MainViewModel : ObservableObject
         _moduleCommunicationService.AutoSteerToggleRequested += OnAutoSteerToggleRequested;
         _moduleCommunicationService.SectionMasterToggleRequested += OnSectionMasterToggleRequested;
         _autoSteerService.RemoteSwitchesReceived += OnRemoteSwitchesReceived;
+        // A hitch angle sensor (PGN 218): the tool service keeps it for the next control tick.
+        _autoSteerService.HitchAngleReceived += _toolPositionService.SetMeasuredHitchAngle;
         _sectionControlService.SectionStateChanged += OnSectionStateChanged;
         _coverageMapService.BoundsExpanded += OnCoverageBoundsExpanded;
 

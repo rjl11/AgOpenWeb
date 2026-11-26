@@ -123,6 +123,14 @@ public static class PgnNumbers
     public const byte IMU_DISCONNECT = 212;
 
     /// <summary>
+    /// Hitch angle sensor (0xDA = 218), AgOpenWeb's own: the measured angle between the tractor
+    /// and a trailed implement, degrees ×100 as int16 LE at bytes 5-6 (positive with the
+    /// implement swung to the right of the tractor's line), byte 7 = 1 when the reading is valid.
+    /// Docs/PGN.md "Hitch angle sensor".
+    /// </summary>
+    public const byte HITCH_ANGLE = 218;
+
+    /// <summary>
     /// Hardware message from a module (0xDD = 221): text shown on screen for N seconds
     /// (AgOpenGPS UDPComm case 221) (#110).
     /// </summary>

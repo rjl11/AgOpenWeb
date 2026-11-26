@@ -145,6 +145,7 @@ public class AutoSteerService : IAutoSteerService
     public event EventHandler<VehicleStateSnapshot>? StateUpdated;
     public event Action<string, int, bool>? HardwareMessageReceived;
     public event Action<byte[]>? RemoteSwitchesReceived;
+    public event Action<double, bool>? HitchAngleReceived;
 
     public bool IsEnabled => _isEnabled;
     public bool IsEngaged => _isEngaged;
@@ -435,6 +436,11 @@ public class AutoSteerService : IAutoSteerService
                     SetImuHeading(heading);
                     SetImuRoll(roll);
                 }
+                break;
+
+            case PgnNumbers.HITCH_ANGLE: // 218 - hitch angle sensor
+                if (PgnBuilder.TryParseHitchAngle(e.Data, out double hitchAngle, out bool hitchValid))
+                    HitchAngleReceived?.Invoke(hitchAngle, hitchValid);
                 break;
 
             case PgnNumbers.IMU_DISCONNECT: // 212 - external IMU gone

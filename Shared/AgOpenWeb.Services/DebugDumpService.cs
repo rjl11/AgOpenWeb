@@ -436,6 +436,9 @@ public class DebugDumpService
                 store.Tool.TrailingHitchLength,
                 // Where the working line is (#679: a placement report needs these, and they were missing).
                 store.Tool.TrailingToolToPivotLength,
+                store.Tool.UseHitchAngleSensor,
+                store.Tool.HitchAngleOffset,
+                store.Tool.HitchAngleInvert,
                 store.Tool.TankTrailingHitchLength,
                 store.Tool.IsToolFrontFixed,
                 store.Tool.IsToolTrailing,

@@ -321,6 +321,7 @@ public sealed class SceneProjector : System.IDisposable
 
         var g = _state.Guidance;
         var hchart = HeadingChartProvider?.Invoke() ?? (double.NaN, double.NaN);
+        var hitchSensor = _tool.LastHitchSensorReading;
 
         return new TickDto(
             sceneVersion,
@@ -424,7 +425,11 @@ public sealed class SceneProjector : System.IDisposable
                    && _config.ActualToolWidth > _config.Vehicle.TrackWidth ? 16 : 0),
             _state.Field.IsOutOfBounds,
             _state.Guidance.IsContourMode ? _state.Guidance.ContourAhead : 0,
-            _state.Guidance.ContourAheadM);
+            _state.Guidance.ContourAheadM,
+            _tool.HitchAngle * 180.0 / Math.PI,
+            _tool.IsHitchAngleMeasured,
+            hitchSensor?.Degrees ?? 0,
+            hitchSensor is null ? 0 : hitchSensor.Value.Fresh && hitchSensor.Value.Valid ? 1 : 2);
     }
 
     // Top status-bar readouts (Phase 1). All state-projected: fix/age/sats from
@@ -866,7 +871,8 @@ public sealed class SceneProjector : System.IDisposable
                 t.Zones, zones, t.IsMultiColoredSections, colors, (int)t.SingleCoverageColor,
                 t.IsSectionOffWhenOut, t.IsHeadlandSectionControl, t.MinCoverage, t.SlowSpeedCutoff,
                 t.CoverageMargin, t.IsWorkSwitchEnabled, t.IsWorkSwitchActiveLow, t.IsWorkSwitchManualSections,
-                t.IsSteerSwitchEnabled, t.IsSteerSwitchManualSections, _config.ActualToolWidth),
+                t.IsSteerSwitchEnabled, t.IsSteerSwitchManualSections, _config.ActualToolWidth,
+                t.UseHitchAngleSensor, t.HitchAngleOffset, t.HitchAngleInvert),
             new UturnConfigDto(g.UTurnStyle, g.UTurnExtension, g.UTurnSmoothing, g.UTurnRadius, g.UTurnDistanceFromBoundary),
             // Line = the field's actual start pass (tram settings live with the field), 1-based.
             new TramConfigDto(g.TramPasses, g.TramDisplay, _config.Tram.StartPass + 1, _config.Tram.TramWidth,

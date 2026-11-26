@@ -205,7 +205,15 @@ public record TickDto(
     // Contour: what the line ahead holds (GuidanceState.ContourAhead: 0 clear, 1 the line turns
     // back, 2 it runs over sprayed ground, 3 it ends) and how far ahead (m): the operator should take over.
     int ContourAhead,
-    double ContourAheadM);
+    double ContourAheadM,
+    // Tractor to implement (IToolPositionService.HitchAngle), degrees, +right of the tractor's
+    // line seen from the seat; HitchAngleMeasured when a hitch angle sensor (PGN 218) placed it.
+    double HitchAngle,
+    bool HitchAngleMeasured,
+    // The sensor's last reading as it came (degrees, before invert and zero offset) for the
+    // tool settings' readout, and its state: 0 never heard, 1 fresh and valid, 2 stale or not valid.
+    double HitchSensorRaw,
+    int HitchSensorState);
 
 /// <summary>Top status-bar readouts (Phase 1), sent at a low rate. GPS fix quality
 /// + correction age + sat count; the units preference (so the client formats speed
@@ -487,7 +495,8 @@ public record ToolConfigDto(
     double SlowSpeedCutoff, double CoverageMargin,
     bool IsWorkSwitchEnabled, bool IsWorkSwitchActiveLow, bool IsWorkSwitchManualSections,
     bool IsSteerSwitchEnabled, bool IsSteerSwitchManualSections,
-    double TotalWidth);
+    double TotalWidth,
+    bool UseHitchAngleSensor, double HitchAngleOffset, bool HitchAngleInvert);
 
 /// <summary>U-Turn tab (ConfigStore.Guidance). Style: 0 Omega, 1 Sagitta.</summary>
 public record UturnConfigDto(int Style, double Extension, int Smoothing, double Radius, double DistanceFromBoundary);

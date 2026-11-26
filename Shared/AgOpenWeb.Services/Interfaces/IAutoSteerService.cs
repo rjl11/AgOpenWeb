@@ -46,6 +46,12 @@ public interface IAutoSteerService
     event Action<byte[]>? RemoteSwitchesReceived;
 
     /// <summary>
+    /// PGN 218 (hitch angle sensor) arrived: the angle in degrees as sent, and its valid flag.
+    /// Raised on the socket thread.
+    /// </summary>
+    event Action<double, bool>? HitchAngleReceived;
+
+    /// <summary>
     /// AutoSteer was engaged but guidance stopped updating for longer than
     /// <c>AutoSteerService.GuidanceStaleLimit</c> (GPS input or the pipeline stalled), so the
     /// service stopped steering on its own (#169). Raised once per stall, on the control-loop

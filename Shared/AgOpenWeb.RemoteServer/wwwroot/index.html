@@ -517,6 +517,12 @@
             <label data-show="trailtbt">Trailing hitch (<span class="u" data-unit="m"></span>)</label><input class="cfg-num" data-unit="m" data-key="tool.trailingHitchLength" data-show="trailtbt" type="number" step="0.01">
             <label data-show="tbt">Tank trailing hitch (<span class="u" data-unit="m"></span>)</label><input class="cfg-num" data-unit="m" data-key="tool.tankTrailingHitchLength" data-show="tbt" type="number" step="0.01">
             <label>Implement length (<span class="u" data-unit="m"></span>)</label><input class="cfg-num" data-unit="m" data-key="tool.length" type="number" step="0.01">
+            <!-- A hitch angle sensor (PGN 218, Docs/PGN.md): trailing tools only. -->
+            <label data-show="trailing">Hitch angle sensor</label><button class="cfg-tgl" data-key="tool.useHitchAngleSensor" data-show="trailing">Off</button>
+            <label data-show="hitchsensor">Invert sensor</label><button class="cfg-tgl" data-key="tool.hitchAngleInvert" data-show="hitchsensor">Off</button>
+            <label data-show="hitchsensor">Zero offset (°)</label><input class="cfg-num" data-key="tool.hitchAngleOffset" data-show="hitchsensor" type="number" step="0.1">
+            <button id="tc-hitch-zero" class="cfg-act cfg-actwide" data-show="hitchsensor" type="button">Implement is straight: set zero</button>
+            <div id="tc-hitch-angle" class="cfg-note" data-show="trailing"></div>
           </div>
         </div>
       </div>

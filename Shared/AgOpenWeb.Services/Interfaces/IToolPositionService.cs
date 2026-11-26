@@ -11,6 +11,9 @@ namespace AgOpenWeb.Services.Interfaces;
 /// Service for calculating tool/implement position relative to vehicle pivot point.
 /// Handles fixed (front/rear), trailing, and TBT (Tow-Between-Tractor) configurations.
 /// </summary>
+/// <summary>A hitch angle sensor's reading: degrees as sent, its valid flag, and whether it is recent enough to use.</summary>
+public readonly record struct HitchAngleReading(double Degrees, bool Valid, bool Fresh);
+
 public interface IToolPositionService
 {
     /// <summary>
@@ -48,6 +51,26 @@ public interface IToolPositionService
     /// True when tool heading is based on actual GPS movement, not startup default.
     /// </summary>
     bool IsToolPositionReady { get; }
+
+    /// <summary>
+    /// The angle between tractor and implement, radians: positive with the implement to the
+    /// right of the tractor's line (seen from the seat), 0 straight behind (and always for a
+    /// fixed tool). Measured when <see cref="IsHitchAngleMeasured"/>, else estimated from the
+    /// track. For TBT it is tractor to tool, across both joints.
+    /// </summary>
+    double HitchAngle { get; }
+
+    /// <summary>True when the last update placed the implement at a hitch angle sensor's reading.</summary>
+    bool IsHitchAngleMeasured { get; }
+
+    /// <summary>
+    /// A hitch angle sensor's reading (PGN 218), degrees as the sensor sent it (before the
+    /// tool's invert and zero offset). Any thread; updates use it while it is fresh.
+    /// </summary>
+    void SetMeasuredHitchAngle(double degrees, bool valid);
+
+    /// <summary>The sensor's last reading as it came, or null if none was ever heard.</summary>
+    HitchAngleReading? LastHitchSensorReading { get; }
 
     /// <summary>
     /// Update tool position based on vehicle position.

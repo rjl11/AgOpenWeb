@@ -33,6 +33,28 @@ function tcDynInput(parent, idx, label, type, onChange, unit, step) {
   c.appendChild(sp); c.appendChild(inp); parent.appendChild(c);
 }
 function tcShow(name, on) { for (const el of tcPanel.querySelectorAll('[data-show="' + name + '"]')) el.hidden = !on; }
+// The Hitch tab's live hitch angle (Tick: IToolPositionService.HitchAngle and the sensor's
+// last reading), while the tab is on screen.
+const tcHitchAngle = document.getElementById('tc-hitch-angle');
+function updateHitchAngleReadout() {
+  if (!tcHitchAngle.offsetParent) return;
+  const op = tick && tick.op;
+  if (!op || typeof op.hitchAngle !== 'number') return;
+  const a = op.hitchAngle.toFixed(1);
+  let text = op.hitchAngleMeasured ? tr('Hitch angle {a}°, measured', { a }) : tr('Hitch angle {a}°, estimated', { a });
+  const st = op.hitchSensorState | 0;
+  text += ' · ' + (st === 0 ? tr('No sensor heard (PGN 218)')
+    : st === 1 ? tr('Sensor sends {r}°', { r: op.hitchSensorRaw.toFixed(1) })
+    : tr('Sensor: no valid reading'));
+  if (tcHitchAngle.textContent !== text) tcHitchAngle.textContent = text;
+}
+// With the implement straight behind, what the sensor sends (after Inverted) is its zero offset.
+document.getElementById('tc-hitch-zero').addEventListener('click', () => {
+  const op = tick && tick.op;
+  if (!op || (op.hitchSensorState | 0) !== 1) { showToast(tr('No valid reading from the hitch angle sensor')); return; }
+  const raw = config && config.tool && config.tool.hitchAngleInvert ? -op.hitchSensorRaw : op.hitchSensorRaw;
+  cfgSend('tool.hitchAngleOffset', raw.toFixed(2));
+});
 function hex6(v) { return '#' + ((v >>> 0) & 0xFFFFFF).toString(16).padStart(6, '0'); }
 function populateToolCfg(force) {
   // Harvester: front-mounted tool only, like AgOpenGPS ConfigTool (#111).
@@ -57,6 +79,7 @@ function populateToolCfg(force) {
   // Conditional visibility by tool type (0 front, 1 rear, 2 TBT, 3 trailing).
   const trailing = t.type === 3, tbt = t.type === 2, trailtbt = trailing || tbt;
   tcShow('rigid', !trailtbt); tcShow('trailtbt', trailtbt); tcShow('tbt', tbt); tcShow('notrailtbt', !trailtbt);
+  tcShow('trailing', trailing); tcShow('hitchsensor', trailing && t.useHitchAngleSensor);
   // A fixed tool hangs on the tractor's 3-point hitch (the vehicle's): the sum says where its
   // working point is from the rear axle (#547).
   if (!trailtbt) {

@@ -411,6 +411,9 @@ public static class WireCodec
         w.Write((byte)(t.IsSteerSwitchEnabled ? 1 : 0));
         w.Write((byte)(t.IsSteerSwitchManualSections ? 1 : 0));
         w.Write(t.TotalWidth);         // f64
+        w.Write((byte)(t.UseHitchAngleSensor ? 1 : 0)); // hitch angle sensor (PGN 218)
+        w.Write(t.HitchAngleOffset);   // f64, degrees
+        w.Write((byte)(t.HitchAngleInvert ? 1 : 0));
         // U-Turn tab.
         var u = c.Uturn;
         w.Write(u.Style);              // i32
@@ -691,6 +694,10 @@ public static class WireCodec
         w.Write((byte)(t.IsOutOfBounds ? 1 : 0)); // #494 — pivot outside the field
         w.Write((byte)t.ContourAhead);   // contour: 0 clear, 1 the line turns back, 2 runs over sprayed ground, 3 ends
         w.Write((float)t.ContourAheadM); // f32 — how far ahead along the line (m)
+        w.Write((float)t.HitchAngle);    // f32 — tractor to implement (deg, +right)
+        w.Write((byte)(t.HitchAngleMeasured ? 1 : 0)); // ... placed by a hitch angle sensor (PGN 218)
+        w.Write((float)t.HitchSensorRaw); // f32 — the sensor's reading as it came (deg)
+        w.Write((byte)t.HitchSensorState); // 0 never heard, 1 fresh and valid, 2 stale or not valid
         return ms.ToArray();
     }
 

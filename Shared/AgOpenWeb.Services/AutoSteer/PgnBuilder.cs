@@ -933,6 +933,26 @@ public static class PgnBuilder
 
     #endregion
 
+    #region PGN 218 Parser (Hitch Angle Sensor)
+
+    /// <summary>
+    /// Parse PGN 218 (0xDA, hitch angle sensor): 14 bytes, the angle between the tractor and a
+    /// trailed implement in degrees ×100 at bytes 5-6 (signed int16, little-endian, positive with
+    /// the implement to the right of the tractor's line) and byte 7 = 1 when the reading is valid.
+    /// </summary>
+    public static bool TryParseHitchAngle(ReadOnlySpan<byte> data, out double angleDegrees, out bool valid)
+    {
+        angleDegrees = 0;
+        valid = false;
+        if (data.Length != 14 || data[0] != HEADER1 || data[1] != HEADER2 || data[3] != PgnNumbers.HITCH_ANGLE)
+            return false;
+        angleDegrees = (short)(data[5] | (data[6] << 8)) * 0.01;
+        valid = data[7] == 1;
+        return true;
+    }
+
+    #endregion
+
     #region PGN 250 Parser (Sensor Data FROM Module)
 
     /// <summary>
